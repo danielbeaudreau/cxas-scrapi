@@ -325,7 +325,8 @@ def test_generate_combined_report_from_dir(tmp_path):
     output_path = evals_dir / "combined_report.html"
 
     generate_combined_report_from_dir(
-        output_dir=str(evals_dir), output_path=str(output_path)
+        output_dir=str(evals_dir),
+        output_path=str(output_path)
     )
 
     assert os.path.exists(output_path)
@@ -362,7 +363,9 @@ def test_generate_combined_report_from_dir_include_all(tmp_path):
     output_path = evals_dir / "combined_report.html"
 
     generate_combined_report_from_dir(
-        output_dir=str(evals_dir), output_path=str(output_path), include=["all"]
+        output_dir=str(evals_dir),
+        output_path=str(output_path),
+        include=["all"]
     )
 
     assert os.path.exists(output_path)

@@ -1108,7 +1108,7 @@ def load_golden_results(run_id, app_name, include=None):
 
         expectations = []
         for ee in golden.get("evaluation_expectation_results", []):
-            result_val = ee.get("result")
+            result_val = ee.get("outcome", ee.get("result"))
             exp_text = ee.get("prompt", ee.get("evaluation_expectation", ""))
             explanation = ee.get("explanation", "")
             met = (
