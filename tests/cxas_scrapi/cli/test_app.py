@@ -28,7 +28,8 @@ from cxas_scrapi.cli import app as cli_app
 @pytest.fixture
 def mock_apps_client():
     with mock.patch(
-        "cxas_scrapi.cli.app.Apps", autospec=True) as mock_apps_class:
+        "cxas_scrapi.cli.app.Apps", autospec=True
+    ) as mock_apps_class:
         mock_instance = mock_apps_class.return_value
         yield mock_instance
 
@@ -72,6 +73,32 @@ def test_app_create(
 
     mock_apps_client.create_app.assert_called_once_with(
         app_id=None, display_name="Test App", description="A test app"
+    )
+
+
+def test_app_create_with_app_name(
+    mock_apps_client, mock_common_get_project_id, mock_common_get_location
+):
+    args = argparse.Namespace(
+        name="Test App",
+        description="A test app",
+        app_name="custom-app-name",
+        project_id="test-project",
+        location="us",
+    )
+
+    mock_app_response = mock.MagicMock()
+    mock_app_response.name = (
+        "projects/test-project/locations/us/apps/custom-app-name"
+    )
+    mock_apps_client.create_app.return_value = mock_app_response
+
+    cli_app.app_create(args)
+
+    mock_apps_client.create_app.assert_called_once_with(
+        app_id="custom-app-name",
+        display_name="Test App",
+        description="A test app",
     )
 
 
