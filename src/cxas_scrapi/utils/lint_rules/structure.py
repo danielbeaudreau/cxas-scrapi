@@ -24,6 +24,8 @@ import json
 import re
 from pathlib import Path
 
+import yaml
+
 from cxas_scrapi.utils.linter import (
     LintContext,
     LintResult,
@@ -208,4 +210,66 @@ class ChildAgentReferences(Rule):
                         fix="Create the agent directory or fix the reference",
                     )
                 )
+        return results
+
+
+@rule("structure")
+class RootAgentValidation(Rule):
+    """Validates that the rootAgent specified in app.json exists."""
+
+    id = "S005"
+    name = "root-agent-validation"
+    description = "Root agent specified in app config exists on disk"
+    default_severity = Severity.ERROR
+    target = "app_config"
+
+    def check(
+        self, file_path: Path, content: str, context: LintContext
+    ) -> list[LintResult]:
+        try:
+            if file_path.suffix == ".json":
+                config = json.loads(content)
+            else:
+                config = yaml.safe_load(content) or {}
+        except (json.JSONDecodeError, yaml.YAMLError):
+            return []
+
+        root_agent = config.get("rootAgent")
+        if not root_agent:
+            return []
+
+        results = []
+        app_root = file_path.parent
+        agent_dir = app_root / "agents" / root_agent
+
+        if root_agent not in context.all_agent_names:
+            results.append(
+                self.make_result(
+                    str(file_path),
+                    (
+                        f"Root agent '{root_agent}' referenced in app config"
+                        " but no agent directory found under agents/."
+                    ),
+                    fix=(
+                        f"Create directory 'agents/{root_agent}'"
+                        " or fix reference in app config."
+                    ),
+                )
+            )
+        else:
+            agent_json = agent_dir / f"{root_agent}.json"
+            if not agent_json.exists():
+                results.append(
+                    self.make_result(
+                        str(file_path),
+                        (
+                            f"Root agent '{root_agent}' exists but is"
+                            f" missing required '{root_agent}.json' file."
+                        ),
+                        fix=(
+                            f"Create file '{agent_json.relative_to(app_root)}'."
+                        ),
+                    )
+                )
+
         return results

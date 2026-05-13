@@ -1673,3 +1673,49 @@ def test_s004_child_agent_by_display_name(tmp_path, context):
 
     results = rule.check(f, f.read_text(), context)
     assert len(results) == 0
+
+
+def test_s005_root_agent_missing(tmp_path, context):
+    from cxas_scrapi.utils.lint_rules.structure import RootAgentValidation  # noqa: PLC0415,I001
+
+    rule = RootAgentValidation()
+    f = tmp_path / "app.json"
+    f.write_text('{"rootAgent": "nonexistent_agent"}')
+
+    results = rule.check(f, f.read_text(), context)
+    assert len(results) == 1
+    assert (
+        "referenced in app config but no agent directory found"
+        in results[0].message
+    )
+
+
+def test_s005_root_agent_missing_json(tmp_path, context):
+    from cxas_scrapi.utils.lint_rules.structure import RootAgentValidation  # noqa: PLC0415,I001
+
+    rule = RootAgentValidation()
+    f = tmp_path / "app.json"
+    f.write_text('{"rootAgent": "billing_agent"}')
+
+    # billing_agent is in context.all_agent_names by default
+    # Create directory but no json file
+    (tmp_path / "agents" / "billing_agent").mkdir(parents=True)
+
+    results = rule.check(f, f.read_text(), context)
+    assert len(results) == 1
+    assert "exists but is missing required" in results[0].message
+
+
+def test_s005_root_agent_valid(tmp_path, context):
+    from cxas_scrapi.utils.lint_rules.structure import RootAgentValidation  # noqa: PLC0415,I001
+
+    rule = RootAgentValidation()
+    f = tmp_path / "app.json"
+    f.write_text('{"rootAgent": "billing_agent"}')
+
+    agent_dir = tmp_path / "agents" / "billing_agent"
+    agent_dir.mkdir(parents=True)
+    (agent_dir / "billing_agent.json").write_text("{}")
+
+    results = rule.check(f, f.read_text(), context)
+    assert len(results) == 0
